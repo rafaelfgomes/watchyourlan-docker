@@ -1,0 +1,38 @@
+services:
+  node-bootstrap:
+    image: ghcr.io/aceberg/node-bootstrap
+    container_name: node-bootstrap
+    restart: unless-stopped
+    networks:
+      local:
+        ipv4_address: 172.${SUBNET_NUMBER:-20}.0.3
+
+  wyl:
+    image: ghcr.io/aceberg/watchyourlan
+    container_name: watchyourlan
+    restart: unless-stopped
+    command: "-n http://node-bootstrap:8850"
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - node-bootstrap
+    volumes:
+    - ${WATCHYOURLAN_DATA_DIR:-./data}:/data/WatchYourLAN
+    environment:
+      TZ: ${TIMEZONE:-Etc/UTC}
+      IFACES: ${IFACES}
+    networks:
+      local:
+        ipv4_address: 172.${SUBNET_NUMBER:-20}.0.2
+      external:
+        ipv4_address: ${WATCHYOURLAN_IP}
+
+networks:
+  local:
+    name: wyl-local-network
+    ipam:
+      config:
+        - subnet: 172.${SUBNET_NUMBER:-20}.0.0/16
+  external:
+    external: true
+    name: ${EXTERNAL_NETWORK_NAME}
